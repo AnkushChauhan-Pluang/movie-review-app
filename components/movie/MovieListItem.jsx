@@ -1,4 +1,5 @@
 import Link from '@components/common/Link'
+import { tmdb } from 'config'
 import Image from 'next/image'
 import React from 'react'
 
@@ -14,9 +15,9 @@ const MovieListItem = ({ movie }) => {
   return (
     <div className="">
       <div className="flex overflow-hidden rounded-md">
-        <Link href={href}>
+        <Link href={href} className="flex">
           <Image
-            src={`https://www.themoviedb.org/t/p/original/${movie.poster_path}`}
+            src={`${tmdb.imageBaseUrl}${movie.poster_path}`}
             height={300}
             width={200}
           />
