@@ -1,4 +1,5 @@
 import MovieList from '@components/movie/MovieList'
+import { tmdb } from 'config'
 import Head from 'next/head'
 
 const Home = ({ data }) => {
@@ -26,7 +27,7 @@ export default Home
 
 export const getServerSideProps = async () => {
   const res = await fetch(
-    `https://api.themoviedb.org/3/discover/movie?&api_key=${process.env.TMDB_API_KEY}`
+    `${tmdb.discoverMoviesBaseUrl}?&api_key=${process.env.TMDB_API_KEY}`
   )
   const data = await res.json()
   return { props: { data } }
