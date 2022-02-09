@@ -1,5 +1,5 @@
-import cn from 'classnames'
-import { Spinner } from '.'
+import cn from 'classnames';
+import { Spinner } from '.';
 
 const Button = ({ children, className, loading, disabled, ...rest }) => {
   const buttonClasses = cn(
@@ -8,14 +8,14 @@ const Button = ({ children, className, loading, disabled, ...rest }) => {
       'opacity-50 cursor-default hover:opacity-50': disabled,
     },
     className
-  )
+  );
 
   return (
     <button className={buttonClasses} disabled={disabled || loading} {...rest}>
       {loading && <Spinner />}
       {children}
     </button>
-  )
-}
+  );
+};
 
-export default Button
+export default Button;
