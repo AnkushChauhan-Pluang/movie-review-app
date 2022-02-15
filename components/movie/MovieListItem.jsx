@@ -1,16 +1,16 @@
-import Link from '@components/common/Link'
-import { tmdb } from 'config'
-import Image from 'next/image'
-import React from 'react'
+import Link from '@components/common/Link';
+import { tmdb } from 'config';
+import Image from 'next/image';
+import React from 'react';
 
 const MovieListItem = ({ movie }) => {
   // console.log(movie)
-  const urlTitle = movie.original_title
+  const urlTitle = movie.title
     .replace(':', '')
     .replaceAll(' ', '-')
-    .toLowerCase()
+    .toLowerCase();
 
-  const href = `/movie/${urlTitle}?id=${movie.id}`
+  const href = `/movie/${urlTitle}?id=${movie.id}`;
 
   return (
     <div className="">
@@ -20,14 +20,15 @@ const MovieListItem = ({ movie }) => {
             src={`${tmdb.imageBaseUrl}${movie.poster_path}`}
             height={300}
             width={200}
+            alt={movie.title}
           />
         </Link>
       </div>
       <Link href={href}>
-        <h2 className="max-w-[200px]">{movie.original_title}</h2>
+        <h2 className="max-w-[200px]">{movie.title}</h2>
       </Link>
     </div>
-  )
-}
+  );
+};
 
-export default MovieListItem
+export default MovieListItem;
