@@ -13,3 +13,13 @@ export const verifyPassword = async (password, hashedPassword) => {
 export const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET);
 };
+
+export const loginUser = (token = null, user = null) => {
+  localStorage.setItem('token', token);
+  localStorage.setItem('user', JSON.stringify(user));
+};
+
+export const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+};

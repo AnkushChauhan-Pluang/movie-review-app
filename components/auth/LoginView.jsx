@@ -1,25 +1,36 @@
-import FormField from '@components/common/FormField'
-import Link from '@components/common/Link'
-import Button from '@components/ui/Button'
-import { Form, Formik } from 'formik'
-import { useState } from 'react'
-import { LoginSchema } from 'utils/validationSchema'
+import FormField from '@components/common/FormField';
+import Link from '@components/common/Link';
+import Button from '@components/ui/Button';
+import axios from 'axios';
+import { useAuthContext } from 'contexts/AuthContext';
+import { Form, Formik } from 'formik';
+import { useRouter } from 'next/router';
+import { useState } from 'react';
+import { loginUser } from 'utils/authHelpers';
+import { LoginSchema } from 'utils/validationSchema';
 
 const LoginView = () => {
-  const [error, setError] = useState('')
+  const [error, setError] = useState('');
+  const { loginDispatch } = useAuthContext();
+  const router = useRouter();
   const initialValues = {
     email: '',
     password: '',
-  }
+  };
 
   const login = async (values) => {
     try {
-      setError('')
-      console.log(values)
+      setError('');
+      let { data } = await axios.post('api/auth/login', values);
+      // console.log(data);
+      loginUser(data.token, data.user);
+      loginDispatch({ type: 'LOGIN_USER', token: data.token, user: data.user });
+      router.push('/');
     } catch (e) {
-      //   setError(e.response.data.message)
+      console.log(e.response);
+      setError(e.response.data.error);
     }
-  }
+  };
 
   return (
     <Formik
@@ -38,7 +49,7 @@ const LoginView = () => {
           <div className="text-center text-red-600">{error}</div>
           <div className="">
             <p>
-              Don't have an account?{' '}
+              {`Don't have an account? `}
               <span>
                 <Link href="/signup" className="font-bold hover:opacity-70">
                   Sign Up
@@ -49,7 +60,7 @@ const LoginView = () => {
         </Form>
       )}
     </Formik>
-  )
-}
+  );
+};
 
-export default LoginView
+export default LoginView;
