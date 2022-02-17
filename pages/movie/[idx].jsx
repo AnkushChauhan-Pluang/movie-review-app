@@ -5,7 +5,9 @@ import Tooltip from '@components/ui/Tooltip';
 import { useAuthContext } from 'contexts/AuthContext';
 import axios from 'axios';
 import useSWR from 'swr';
+import WriteOrEditReview from '@components/movie/WriteOrEditReview';
 import { useState } from 'react';
+import ReviewList from '@components/movie/ReviewList';
 
 const MovieDetails = ({ movie }) => {
   const {
@@ -14,9 +16,7 @@ const MovieDetails = ({ movie }) => {
     genres,
     id,
     original_language,
-    original_title,
     overview,
-    popularity,
     poster_path,
     release_date,
     revenue,
@@ -25,12 +25,22 @@ const MovieDetails = ({ movie }) => {
     tagline,
     title,
     vote_average,
-    vote_count,
   } = movie;
 
   const { loginState } = useAuthContext();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
+
+  const fetchReviews = async (url) => {
+    const { data } = await axios.get(url);
+    return data;
+  };
+  const { data: reviews } = useSWR(`/api/movie/${id}/reviews`, fetchReviews);
+
+  const alreadyReviewed =
+    loginState.user &&
+    reviews &&
+    reviews.map((r) => r.author).includes(loginState.user.username);
 
   const fetchProfile = async (url) => {
     const { data } = await axios.get(url, {
@@ -206,6 +216,9 @@ const MovieDetails = ({ movie }) => {
           </div>
         </div>
       </div>
+      <h2 className="mx-10 my-4 text-2xl font-semibold">Reviews</h2>
+      <ReviewList reviews={reviews} movieId={id} />
+      <WriteOrEditReview movieId={id} alreadyReviewed={alreadyReviewed} />
     </div>
   );
 };
