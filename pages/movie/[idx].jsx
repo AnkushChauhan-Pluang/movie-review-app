@@ -1,13 +1,18 @@
 import Image from 'next/image';
 import { tmdb } from 'config';
-import { BookmarkIcon, HeartIcon, StarIcon } from '@heroicons/react/outline';
+import { BookmarkIcon, HeartIcon, StarIcon } from '@heroicons/react/solid';
+import Tooltip from '@components/ui/Tooltip';
+import { useAuthContext } from 'contexts/AuthContext';
+import axios from 'axios';
+import useSWR from 'swr';
+import { useState } from 'react';
 
 const MovieDetails = ({ movie }) => {
   const {
     backdrop_path,
     budget,
     genres,
-    imdb_id,
+    id,
     original_language,
     original_title,
     overview,
@@ -23,7 +28,61 @@ const MovieDetails = ({ movie }) => {
     vote_count,
   } = movie;
 
-  // console.log(movie);
+  const { loginState } = useAuthContext();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+
+  const fetchProfile = async (url) => {
+    const { data } = await axios.get(url, {
+      headers: { Authorization: `Bearer ${loginState.token}` },
+    });
+    const { favorites, watchlist } = data;
+    setIsFavorite(favorites.includes(id));
+    setIsInWatchlist(watchlist.includes(id));
+    return data;
+  };
+
+  const { mutate } = useSWR(
+    loginState.token ? '/api/profile' : null,
+    fetchProfile
+  );
+
+  const addRemoveFavorite = async () => {
+    if (!loginState.user) return;
+    console.log('Favorites clicked');
+    try {
+      const res = await axios.post(
+        '/api/favorites',
+        { movieId: id },
+        { headers: { Authorization: `Bearer ${loginState.token}` } }
+      );
+      console.log(res);
+    } catch (e) {
+      console.log(e.response.data.error);
+    }
+    mutate();
+  };
+
+  const addRemoveWatchlist = async () => {
+    if (!loginState.user) return;
+    console.log('Watchlist clicked');
+    try {
+      const res = await axios.post(
+        '/api/watchlist',
+        { movieId: id },
+        { headers: { Authorization: `Bearer ${loginState.token}` } }
+      );
+      console.log(res);
+    } catch (e) {
+      console.log(e.response.data.error);
+    }
+    mutate();
+  };
+
+  const giveRating = () => {
+    if (!loginState.user) return;
+    console.log('Rating clicked');
+  };
 
   const formattedReleaseDate = release_date.split('-').reverse().join('/');
   const formattedRuntime = `${Math.floor(runtime / 60)}h ${runtime % 60}m`;
@@ -41,13 +100,14 @@ const MovieDetails = ({ movie }) => {
         <div className="flex gap-8">
           <div className="flex w-full overflow-hidden rounded-md">
             <Image
+              alt={title}
               src={`${tmdb.imageBaseUrl}${poster_path}`}
               height={400}
               width={250}
             />
           </div>
           <div className="flex flex-col gap-3 text-white">
-            <h2 className="text-4xl font-semibold">{original_title}</h2>
+            <h2 className="text-4xl font-semibold">{title}</h2>
             <div className="flex gap-2">
               <div>{formattedReleaseDate}</div>
               <div className="flex">
@@ -62,14 +122,62 @@ const MovieDetails = ({ movie }) => {
                 {userScore}
                 <span className="text-xs">%</span>
               </div>
-              <button className="rounded-full bg-neutral-600 p-2">
-                <HeartIcon height={20} width={20} />
+              <button
+                className="group relative rounded-full bg-neutral-600 p-2"
+                onClick={addRemoveFavorite}
+              >
+                <HeartIcon
+                  height={20}
+                  width={20}
+                  className={
+                    loginState.user && isFavorite
+                      ? 'text-pink-600'
+                      : 'text-white'
+                  }
+                />
+                <Tooltip
+                  text={
+                    loginState.user
+                      ? isFavorite
+                        ? 'Remove from favorites'
+                        : 'Mark as favorite'
+                      : 'Login to add to favorites'
+                  }
+                />
               </button>
-              <button className="rounded-full bg-neutral-600 p-2">
-                <BookmarkIcon height={20} width={20} />
+              <button
+                className="group relative rounded-full bg-neutral-600 p-2"
+                onClick={addRemoveWatchlist}
+              >
+                <BookmarkIcon
+                  height={20}
+                  width={20}
+                  className={
+                    loginState.user && isInWatchlist
+                      ? 'text-orange-500'
+                      : 'text-white'
+                  }
+                />
+                <Tooltip
+                  text={
+                    loginState.user
+                      ? isInWatchlist
+                        ? 'Remove from watchlist'
+                        : 'Add to watchlist'
+                      : 'Login to add to watchlist'
+                  }
+                />
               </button>
-              <button className="rounded-full bg-neutral-600 p-2">
+              <button
+                className="group relative rounded-full bg-neutral-600 p-2"
+                onClick={giveRating}
+              >
                 <StarIcon height={20} width={20} />
+                <Tooltip
+                  text={
+                    loginState.user ? 'Rate it!' : 'Login to rate this movie'
+                  }
+                />
               </button>
             </div>
             <h4 className="italic text-gray-400">{tagline}</h4>
