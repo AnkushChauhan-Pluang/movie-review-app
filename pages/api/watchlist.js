@@ -1,5 +1,7 @@
 import clientPromise from 'db/mongodb';
 import authMiddleware from 'middlewares/authMiddleware';
+import errorMiddleware from 'middlewares/errorMiddleware';
+import ResourceNotFoundError from 'utils/errors/ResourceNotFoundError';
 
 const handler = async (req, res) => {
   const client = await clientPromise;
@@ -7,6 +9,7 @@ const handler = async (req, res) => {
   const { movieId } = req.body;
   try {
     const movie = await db.findOne({ _id: req.userId });
+    if (!movie) throw new ResourceNotFoundError('Movie not found');
     const isInWatchlist = movie.watchlist && movie.watchlist.includes(movieId);
     isInWatchlist
       ? await db.findOneAndUpdate(
@@ -23,8 +26,7 @@ const handler = async (req, res) => {
       } your watchlist`,
     });
   } catch (error) {
-    console.log(error);
-    res.status(400).json({ error: error.message });
+    errorMiddleware(error, res);
   }
 };
 

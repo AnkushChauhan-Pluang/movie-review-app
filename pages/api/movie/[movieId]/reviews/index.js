@@ -1,4 +1,5 @@
 import clientPromise from 'db/mongodb';
+import errorMiddleware from 'middlewares/errorMiddleware';
 
 const handler = async (req, res) => {
   const client = await clientPromise;
@@ -9,8 +10,7 @@ const handler = async (req, res) => {
     const reviews = await db.find({ movieId: parseInt(movieId) }).toArray();
     res.json(reviews);
   } catch (error) {
-    console.log(error);
-    res.status(400).json({ error: error.message });
+    errorMiddleware(error, res);
   }
 };
 

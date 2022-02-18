@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
+import errorMiddleware from './errorMiddleware';
 
 const authMiddleware = (handler) => {
   return async (req, res) => {
@@ -12,8 +13,7 @@ const authMiddleware = (handler) => {
       req.userId = new ObjectId(decoded.userId);
       return handler(req, res);
     } catch (error) {
-      console.log(error);
-      res.status(401).json({ error: error.message });
+      errorMiddleware(error, res);
     }
   };
 };
