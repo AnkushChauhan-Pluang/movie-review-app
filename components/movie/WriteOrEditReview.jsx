@@ -10,34 +10,38 @@ const WriteOrEditReview = ({ movieId, alreadyReviewed }) => {
   const writeOrEdit = alreadyReviewed ? 'Edit' : 'Write';
   const author = loginState.user && loginState.user.username;
 
-  const writeReview = async (review) => {
-    const res = await axios.post(
+  const writeReview = (review) => {
+    return axios.post(
       `/api/movie/${movieId}/reviews/write`,
       { author, movieId, review },
       { headers: { Authorization: `Bearer ${loginState.token}` } }
     );
-    console.log('write res =>', res);
   };
 
-  const editReview = async (review) => {
-    const res = await axios.patch(
+  const editReview = (review) => {
+    return axios.patch(
       `/api/movie/${movieId}/reviews/${author}`,
       { movieId, review },
       { headers: { Authorization: `Bearer ${loginState.token}` } }
     );
-    console.log('edit res =>', res);
   };
 
-  const writeOrEditReview = async ({ review }, { resetForm }) => {
+  const writeOrEditReview = ({ review }, { resetForm }) => {
     if (review === '') return;
-    try {
-      console.log(review, movieId);
-      !alreadyReviewed ? writeReview(review) : editReview(review);
-      resetForm();
-      mutate(`/api/movie/${movieId}/reviews`);
-    } catch (e) {
-      console.log('error', e);
-    }
+    console.log(review, movieId);
+    !alreadyReviewed
+      ? writeReview(review)
+          .then(() => {
+            resetForm();
+            mutate(`/api/movie/${movieId}/reviews`);
+          })
+          .catch((e) => console.log(e))
+      : editReview(review)
+          .then(() => {
+            resetForm();
+            mutate(`/api/movie/${movieId}/reviews`);
+          })
+          .catch((e) => console.log(e));
   };
 
   return (

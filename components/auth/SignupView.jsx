@@ -12,7 +12,7 @@ import { SignupSchema } from 'utils/validationSchema';
 const SignupView = () => {
   const [error, setError] = useState('');
   const { loginDispatch } = useAuthContext();
-  const router = useRouter()
+  const router = useRouter();
   const initialValues = {
     email: '',
     username: '',
@@ -20,21 +20,24 @@ const SignupView = () => {
     confirmPassword: '',
   };
 
-  const signup = async ({ email, username, password }) => {
-    try {
-      setError('');
-      let { data } = await axios.post('api/auth/signup', {
-        email,
-        username,
-        password,
-      });
-      // console.log(res);
-      loginUser(data.token, data.user);
-      loginDispatch({ type: 'LOGIN_USER', token: data.token, user: data.user });
-      router.push('/')
-    } catch (e) {
-      setError(e.response.data.message);
-    }
+  const signup = ({ email, username, password }, { setSubmitting }) => {
+    setError('');
+    axios
+      .post('api/auth/signup', { email, username, password })
+      .then(({ data }) => {
+        loginUser(data.token, data.user);
+        loginDispatch({
+          type: 'LOGIN_USER',
+          token: data.token,
+          user: data.user,
+        });
+        router.push('/');
+      })
+      .catch((e) => {
+        const { error } = e.response.data;
+        setError(error.message);
+      })
+      .finally(setSubmitting(false));
   };
 
   return (

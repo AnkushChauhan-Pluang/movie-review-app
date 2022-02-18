@@ -1,15 +1,15 @@
-import Image from 'next/image';
-import { tmdb } from 'config';
-import { BookmarkIcon, HeartIcon, StarIcon } from '@heroicons/react/solid';
-import Tooltip from '@components/ui/Tooltip';
-import { useAuthContext } from 'contexts/AuthContext';
-import axios from 'axios';
-import useSWR from 'swr';
-import WriteOrEditReview from '@components/movie/WriteOrEditReview';
-import { useState } from 'react';
 import ReviewList from '@components/movie/ReviewList';
+import WriteOrEditReview from '@components/movie/WriteOrEditReview';
+import Tooltip from '@components/ui/Tooltip';
+import { BookmarkIcon, HeartIcon, StarIcon } from '@heroicons/react/solid';
+import axios from 'axios';
+import { tmdb } from 'config';
+import { useAuthContext } from 'contexts/AuthContext';
+import Image from 'next/image';
+import { useState } from 'react';
+import useSWR from 'swr';
 
-const MovieDetails = ({ movie }) => {
+const MovieDetails = ({ data: movie }) => {
   const {
     backdrop_path,
     budget,
@@ -31,9 +31,8 @@ const MovieDetails = ({ movie }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
 
-  const fetchReviews = async (url) => {
-    const { data } = await axios.get(url);
-    return data;
+  const fetchReviews = (url) => {
+    return axios.get(url).then(({ data }) => data);
   };
   const { data: reviews } = useSWR(`/api/movie/${id}/reviews`, fetchReviews);
 
@@ -42,14 +41,17 @@ const MovieDetails = ({ movie }) => {
     reviews &&
     reviews.map((r) => r.author).includes(loginState.user.username);
 
-  const fetchProfile = async (url) => {
-    const { data } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${loginState.token}` },
-    });
-    const { favorites, watchlist } = data;
-    setIsFavorite(favorites.includes(id));
-    setIsInWatchlist(watchlist.includes(id));
-    return data;
+  const fetchProfile = (url) => {
+    return axios
+      .get(url, {
+        headers: { Authorization: `Bearer ${loginState.token}` },
+      })
+      .then(({ data }) => {
+        const { favorites, watchlist } = data;
+        setIsFavorite(favorites.includes(id));
+        setIsInWatchlist(watchlist.includes(id));
+      })
+      .catch((e) => console.log(e));
   };
 
   const { mutate } = useSWR(
@@ -57,36 +59,28 @@ const MovieDetails = ({ movie }) => {
     fetchProfile
   );
 
-  const addRemoveFavorite = async () => {
+  const addRemoveFavorite = () => {
     if (!loginState.user) return;
-    console.log('Favorites clicked');
-    try {
-      const res = await axios.post(
+    return axios
+      .post(
         '/api/favorites',
         { movieId: id },
         { headers: { Authorization: `Bearer ${loginState.token}` } }
-      );
-      console.log(res);
-    } catch (e) {
-      console.log(e.response.data.error);
-    }
-    mutate();
+      )
+      .then(() => mutate())
+      .catch((e) => console.log(e.response.data.error));
   };
 
-  const addRemoveWatchlist = async () => {
+  const addRemoveWatchlist = () => {
     if (!loginState.user) return;
-    console.log('Watchlist clicked');
-    try {
-      const res = await axios.post(
+    return axios
+      .post(
         '/api/watchlist',
         { movieId: id },
         { headers: { Authorization: `Bearer ${loginState.token}` } }
-      );
-      console.log(res);
-    } catch (e) {
-      console.log(e.response.data.error);
-    }
-    mutate();
+      )
+      .then(() => mutate())
+      .catch((e) => console.log(e.response.data.error));
   };
 
   const giveRating = () => {
@@ -225,11 +219,10 @@ const MovieDetails = ({ movie }) => {
 
 export default MovieDetails;
 
-export const getServerSideProps = async ({ query }) => {
+export const getServerSideProps = ({ query }) => {
   const { id } = query;
-  const res = await fetch(
-    `${tmdb.movieBaseUrl}${id}?&api_key=${process.env.TMDB_API_KEY}`
-  );
-  const movie = await res.json();
-  return { props: { movie } };
+  return axios
+    .get(`${tmdb.movieBaseUrl}${id}?&api_key=${process.env.TMDB_API_KEY}`)
+    .then(({ data }) => ({ props: { data } }))
+    .catch((e) => console.log(e));
 };

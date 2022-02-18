@@ -18,18 +18,24 @@ const LoginView = () => {
     password: '',
   };
 
-  const login = async (values) => {
-    try {
-      setError('');
-      let { data } = await axios.post('api/auth/login', values);
-      // console.log(data);
-      loginUser(data.token, data.user);
-      loginDispatch({ type: 'LOGIN_USER', token: data.token, user: data.user });
-      router.push('/');
-    } catch (e) {
-      console.log(e.response);
-      setError(e.response.data.error);
-    }
+  const login = (values, { setSubmitting }) => {
+    setError('');
+    axios
+      .post('api/auth/login', values)
+      .then(({ data }) => {
+        loginUser(data.token, data.user);
+        loginDispatch({
+          type: 'LOGIN_USER',
+          token: data.token,
+          user: data.user,
+        });
+        router.push('/');
+      })
+      .catch((e) => {
+        const { error } = e.response.data;
+        setError(error.message);
+      })
+      .finally(setSubmitting(false));
   };
 
   return (

@@ -1,9 +1,11 @@
 import MovieList from '@components/movie/MovieList';
+import axios from 'axios';
 import { tmdb } from 'config';
 import Head from 'next/head';
 
 const Home = ({ data }) => {
-  if (!data.success)
+  // console.log(data);
+  if (data.success === false)
     return (
       <div className="m-2 border-l-8 border-red-600 px-2">
         {data.status_message}
@@ -25,10 +27,9 @@ const Home = ({ data }) => {
 
 export default Home;
 
-export const getServerSideProps = async () => {
-  const res = await fetch(
-    `${tmdb.discoverMoviesBaseUrl}?&api_key=${process.env.TMDB_API_KEY}`
-  );
-  const data = await res.json();
-  return { props: { data } };
+export const getServerSideProps = () => {
+  return axios
+    .get(`${tmdb.discoverMoviesBaseUrl}?&api_key=${process.env.TMDB_API_KEY}`)
+    .then(({ data }) => ({ props: { data } }))
+    .catch((e) => console.log(e));
 };

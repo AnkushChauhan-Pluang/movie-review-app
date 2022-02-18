@@ -10,11 +10,13 @@ const ReviewListItem = ({ reviewItem }) => {
   const loggedInUser = loginState.user && loginState.user.username;
   const isCurrentUser = loggedInUser === author;
 
-  const deleteReview = async () => {
-    await axios.delete(`/api/movie/${movieId}/reviews/${_id}`, {
-      headers: { Authorization: `Bearer ${loginState.token}` },
-    });
-    mutate(`/api/movie/${movieId}/reviews`);
+  const deleteReview = () => {
+    axios
+      .delete(`/api/movie/${movieId}/reviews/${_id}`, {
+        headers: { Authorization: `Bearer ${loginState.token}` },
+      })
+      .then(() => mutate(`/api/movie/${movieId}/reviews`))
+      .catch((e) => console.log(e));
   };
 
   return (
