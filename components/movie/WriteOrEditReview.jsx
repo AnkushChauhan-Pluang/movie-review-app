@@ -8,44 +8,50 @@ const WriteOrEditReview = ({ movieId, alreadyReviewed }) => {
   const { loginState } = useAuthContext();
 
   const writeOrEdit = alreadyReviewed ? 'Edit' : 'Write';
-  const author = loginState.user && loginState.user.username;
+  const username = loginState.user && loginState.user.username;
 
   const writeReview = (review) => {
     return axios.post(
-      `/api/movie/${movieId}/reviews/write`,
-      { author, movieId, review },
+      `/api/reviews`,
+      { username, movieId, review },
       { headers: { Authorization: `Bearer ${loginState.token}` } }
     );
   };
 
   const editReview = (review) => {
     return axios.patch(
-      `/api/movie/${movieId}/reviews/${author}`,
-      { movieId, review },
+      `/api/reviews/${movieId}`,
+      { review },
       { headers: { Authorization: `Bearer ${loginState.token}` } }
     );
   };
 
   const writeOrEditReview = ({ review }, { resetForm }) => {
     if (review === '') return;
-    console.log(review, movieId);
+    // console.log(review, movieId);
     !alreadyReviewed
       ? writeReview(review)
           .then(() => {
             resetForm();
-            mutate(`/api/movie/${movieId}/reviews`);
+            mutate(`/api/reviews?movieId=${movieId}`);
           })
-          .catch((e) => console.log(e))
+          .catch((e) => {
+            const { message } = e.response.data;
+            dispatch({ type: 'OPEN_TOAST', text: `${message}`, variant: 'error' });
+          })
       : editReview(review)
           .then(() => {
             resetForm();
-            mutate(`/api/movie/${movieId}/reviews`);
+            mutate(`/api/reviews?movieId=${movieId}`);
           })
-          .catch((e) => console.log(e));
+          .catch((e) => {
+            const { message } = e.response.data;
+            dispatch({ type: 'OPEN_TOAST', text: `${message}`, variant: 'error' });
+          })
   };
 
   return (
-    <div className="mx-10 my-6 rounded border p-6 shadow-md">
+    <div className="my-6 rounded border p-6 shadow-md">
       <h3 className="mb-4 text-xl font-bold">{writeOrEdit} your review</h3>
       <Formik initialValues={{ review: '' }} onSubmit={writeOrEditReview}>
         {() => (

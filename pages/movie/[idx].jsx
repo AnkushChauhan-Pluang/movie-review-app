@@ -1,45 +1,20 @@
+import HoverRating from '@components/movie/Rating';
 import ReviewList from '@components/movie/ReviewList';
-import WriteOrEditReview from '@components/movie/WriteOrEditReview';
 import Tooltip from '@components/ui/Tooltip';
-import { BookmarkIcon, HeartIcon, StarIcon } from '@heroicons/react/solid';
+import { useUI } from '@components/ui/uiContext';
+import { HeartIcon } from '@heroicons/react/solid';
 import axios from 'axios';
-import { tmdb } from 'config';
 import { useAuthContext } from 'contexts/AuthContext';
 import Image from 'next/image';
 import { useState } from 'react';
 import useSWR from 'swr';
+import { toDDMMYYYY } from 'utils/dateFormatter';
 
-const MovieDetails = ({ data: movie }) => {
-  const {
-    backdrop_path,
-    budget,
-    genres,
-    id,
-    original_language,
-    overview,
-    poster_path,
-    release_date,
-    revenue,
-    runtime,
-    status,
-    tagline,
-    title,
-    vote_average,
-  } = movie;
-
+const MovieDetails = ({ movie }) => {
+  // console.log('movie => ', movie);
   const { loginState } = useAuthContext();
+  const { dispatch } = useUI();
   const [isFavorite, setIsFavorite] = useState(false);
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
-
-  const fetchReviews = (url) => {
-    return axios.get(url).then(({ data }) => data);
-  };
-  const { data: reviews } = useSWR(`/api/movie/${id}/reviews`, fetchReviews);
-
-  const alreadyReviewed =
-    loginState.user &&
-    reviews &&
-    reviews.map((r) => r.author).includes(loginState.user.username);
 
   const fetchProfile = (url) => {
     return axios
@@ -47,15 +22,17 @@ const MovieDetails = ({ data: movie }) => {
         headers: { Authorization: `Bearer ${loginState.token}` },
       })
       .then(({ data }) => {
-        const { favorites, watchlist } = data;
-        setIsFavorite(favorites.includes(id));
-        setIsInWatchlist(watchlist.includes(id));
+        const { favorites } = data;
+        setIsFavorite(favorites.includes(_id));
       })
-      .catch((e) => console.log(e));
+      .catch((e) => {
+        const { message } = e.response.data;
+        dispatch({ type: 'OPEN_TOAST', text: `${message}`, variant: 'error' });
+      });
   };
 
   const { mutate } = useSWR(
-    loginState.token ? '/api/profile' : null,
+    loginState.token ? '/api/users/me' : null,
     fetchProfile
   );
 
@@ -63,69 +40,71 @@ const MovieDetails = ({ data: movie }) => {
     if (!loginState.user) return;
     return axios
       .post(
-        '/api/favorites',
-        { movieId: id },
+        '/api/users/favorites',
+        { movieId: _id },
         { headers: { Authorization: `Bearer ${loginState.token}` } }
       )
-      .then(() => mutate())
-      .catch((e) => console.log(e.response.data.error));
+      .then(() => {
+        dispatch({
+          type: 'OPEN_TOAST',
+          text: `${isFavorite ? 'Removed from' : 'Saved to'} favorites`,
+          variant: `${isFavorite ? 'warning' : 'success'}`,
+        });
+        mutate();
+      })
+      .catch((e) => {
+        const { message } = e.response.data;
+        dispatch({ type: 'OPEN_TOAST', text: `${message}`, variant: 'error' });
+      });
   };
 
-  const addRemoveWatchlist = () => {
-    if (!loginState.user) return;
-    return axios
-      .post(
-        '/api/watchlist',
-        { movieId: id },
-        { headers: { Authorization: `Bearer ${loginState.token}` } }
-      )
-      .then(() => mutate())
-      .catch((e) => console.log(e.response.data.error));
-  };
+  if (!movie) return <div className="">No movie found</div>;
 
-  const giveRating = () => {
-    if (!loginState.user) return;
-    console.log('Rating clicked');
-  };
-
-  const formattedReleaseDate = release_date.split('-').reverse().join('/');
+  const {
+    genres,
+    _id,
+    overview,
+    poster,
+    release_date,
+    runtime,
+    status,
+    tagline,
+    title,
+  } = movie;
+  const formattedReleaseDate = toDDMMYYYY(release_date);
   const formattedRuntime = `${Math.floor(runtime / 60)}h ${runtime % 60}m`;
-  const userScore = vote_average * 10;
+  // const userScore = vote_average * 10;
 
   return (
     <div>
       <div
         style={{
           backgroundImage: `linear-gradient(to right, rgba(31.5, 31.5, 31.5, 1) 150px, rgba(31.5, 31.5, 31.5, 0.84) 100%),
-           url(${tmdb.imageBaseUrl}${backdrop_path})`,
+           url(${poster})`,
+          backgroundPosition: 'right -250px',
         }}
-        className="bg-cover p-8"
+        className="p-8"
       >
         <div className="flex gap-8">
-          <div className="flex w-full overflow-hidden rounded-md">
-            <Image
-              alt={title}
-              src={`${tmdb.imageBaseUrl}${poster_path}`}
-              height={400}
-              width={250}
-            />
+          <div className="flex w-1/3 min-w-fit overflow-hidden rounded-xl">
+            <Image alt={title} src={`${poster}`} height={450} width={300} />
           </div>
-          <div className="flex flex-col gap-3 text-white">
+          <div className="flex flex-col justify-center gap-3 text-white">
             <h2 className="text-4xl font-semibold">{title}</h2>
             <div className="flex gap-2">
               <div>{formattedReleaseDate}</div>
               <div className="flex">
-                {genres.map((g, i) => (
-                  <div key={g.id}>{`${i ? ', ' : ''}${g.name}`}</div>
+                {genres.map((genre, i) => (
+                  <div key={i}>{`${i ? ', ' : ''}${genre}`}</div>
                 ))}
               </div>
               <div>{formattedRuntime}</div>
             </div>
             <div className="flex items-center gap-6">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-600 text-xl font-bold text-white">
+              {/* <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-600 text-xl font-bold text-white">
                 {userScore}
                 <span className="text-xs">%</span>
-              </div>
+              </div> */}
               <button
                 className="group relative rounded-full bg-neutral-600 p-2"
                 onClick={addRemoveFavorite}
@@ -149,34 +128,8 @@ const MovieDetails = ({ data: movie }) => {
                   }
                 />
               </button>
-              <button
-                className="group relative rounded-full bg-neutral-600 p-2"
-                onClick={addRemoveWatchlist}
-              >
-                <BookmarkIcon
-                  height={20}
-                  width={20}
-                  className={
-                    loginState.user && isInWatchlist
-                      ? 'text-orange-500'
-                      : 'text-white'
-                  }
-                />
-                <Tooltip
-                  text={
-                    loginState.user
-                      ? isInWatchlist
-                        ? 'Remove from watchlist'
-                        : 'Add to watchlist'
-                      : 'Login to add to watchlist'
-                  }
-                />
-              </button>
-              <button
-                className="group relative rounded-full bg-neutral-600 p-2"
-                onClick={giveRating}
-              >
-                <StarIcon height={20} width={20} />
+              <button className="group relative rounded-full bg-neutral-600 p-2">
+                <HoverRating movieId={_id} />
                 <Tooltip
                   text={
                     loginState.user ? 'Rate it!' : 'Login to rate this movie'
@@ -194,25 +147,11 @@ const MovieDetails = ({ data: movie }) => {
                 <h3 className="text-md font-semibold">Status</h3>
                 <p className="text-xs">{status}</p>
               </li>
-              <li>
-                <h3 className="text-md font-semibold">Original Language</h3>
-                <p className="text-xs">{original_language}</p>
-              </li>
-              <li>
-                <h3 className="text-md font-semibold">Budget</h3>
-                <p className="text-xs">{budget > 0 ? `$${budget}` : '-'}</p>
-              </li>
-              <li>
-                <h3 className="text-md font-semibold">Revenue</h3>
-                <p className="text-xs">{revenue > 0 ? `$${revenue}` : '-'}</p>
-              </li>
             </ul>
           </div>
         </div>
       </div>
-      <h2 className="mx-10 my-4 text-2xl font-semibold">Reviews</h2>
-      <ReviewList reviews={reviews} movieId={id} />
-      <WriteOrEditReview movieId={id} alreadyReviewed={alreadyReviewed} />
+      <ReviewList movieId={_id} />
     </div>
   );
 };
@@ -221,8 +160,13 @@ export default MovieDetails;
 
 export const getServerSideProps = ({ query }) => {
   const { id } = query;
-  return axios
-    .get(`${tmdb.movieBaseUrl}${id}?&api_key=${process.env.TMDB_API_KEY}`)
-    .then(({ data }) => ({ props: { data } }))
-    .catch((e) => console.log(e));
+  return fetch(`http://localhost:3000/api/movies/${id}`)
+    .then((res) => res.json())
+    .then((data) => {
+      return { props: { movie: data } };
+    })
+    .catch((e) => {
+      console.log('error => ', e);
+      return { props: { movie: null } };
+    });
 };

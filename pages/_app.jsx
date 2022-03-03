@@ -1,4 +1,5 @@
 import Layout from '@components/common/Layout';
+import { UIProvider } from '@components/ui/uiContext';
 import { CacheProvider } from '@emotion/react';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
@@ -19,9 +20,11 @@ const MyApp = ({
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthContextProvider>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
+          <UIProvider>
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+          </UIProvider>
         </AuthContextProvider>
       </ThemeProvider>
     </CacheProvider>

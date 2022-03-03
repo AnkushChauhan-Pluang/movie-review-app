@@ -19,3 +19,11 @@ export const SignupSchema = yup.object({
     })
     .required('Confirmation password is required'),
 });
+
+export const MovieSchema = yup.object({
+  title: yup.string().min(3).required(),
+  tagline: yup.string().min(3).required('Tagline is required'),
+  overview: yup.string().min(3).required('Overview is required'),
+  runtime: yup.number().required('Runtime is required'),
+  release_date: yup.date().required('Release date is required'),
+});

@@ -1,3 +1,4 @@
+import { TextField } from '@mui/material';
 import { ErrorMessage, Field } from 'formik';
 
 const FormField = (props) => {
@@ -5,7 +6,10 @@ const FormField = (props) => {
     <div>
       <Field
         {...props}
-        className="w-full rounded border p-2 text-sm placeholder:text-sm"
+        as={TextField}
+        variant="outlined"
+        size="small"
+        className="w-full"
       />
       <ErrorMessage
         name={props.name}

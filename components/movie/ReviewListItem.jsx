@@ -5,25 +5,28 @@ import { useAuthContext } from 'contexts/AuthContext';
 import { mutate } from 'swr';
 
 const ReviewListItem = ({ reviewItem }) => {
-  const { _id, author, edited, movieId, review } = reviewItem;
+  const { _id, username, edited, movieId, review } = reviewItem;
   const { loginState } = useAuthContext();
   const loggedInUser = loginState.user && loginState.user.username;
-  const isCurrentUser = loggedInUser === author;
+  const isCurrentUser = loggedInUser === username;
 
   const deleteReview = () => {
     axios
-      .delete(`/api/movie/${movieId}/reviews/${_id}`, {
+      .delete(`/api/reviews/${_id}`, {
         headers: { Authorization: `Bearer ${loginState.token}` },
       })
-      .then(() => mutate(`/api/movie/${movieId}/reviews`))
-      .catch((e) => console.log(e));
+      .then(() => mutate(`/api/reviews`))
+      .catch((e) => {
+        const { message } = e.response.data;
+        dispatch({ type: 'OPEN_TOAST', text: `${message}`, variant: 'error' });
+      })
   };
 
   return (
-    <div className="mx-10 flex items-center justify-between rounded border p-6 shadow-md">
+    <div className="flex items-center justify-between rounded border p-6 shadow-md">
       <div className="">
         <h3>
-          A review by <strong>{author}</strong>
+          A review by <strong>{username}</strong>
           <span className="ml-2 text-sm text-neutral-500">
             {edited && '(edited)'}
           </span>

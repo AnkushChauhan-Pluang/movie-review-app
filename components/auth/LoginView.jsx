@@ -1,6 +1,7 @@
 import FormField from '@components/common/FormField';
 import Link from '@components/common/Link';
 import Button from '@components/ui/Button';
+import { useUI } from '@components/ui/uiContext';
 import axios from 'axios';
 import { useAuthContext } from 'contexts/AuthContext';
 import { Form, Formik } from 'formik';
@@ -10,16 +11,15 @@ import { loginUser } from 'utils/authHelpers';
 import { LoginSchema } from 'utils/validationSchema';
 
 const LoginView = () => {
-  const [error, setError] = useState('');
   const { loginDispatch } = useAuthContext();
+  const { dispatch } = useUI();
   const router = useRouter();
   const initialValues = {
     email: '',
     password: '',
   };
 
-  const login = (values, { setSubmitting }) => {
-    setError('');
+  const login = (values) => {
     axios
       .post('api/auth/login', values)
       .then(({ data }) => {
@@ -29,13 +29,22 @@ const LoginView = () => {
           token: data.token,
           user: data.user,
         });
-        router.push('/');
+        return data.user.role === 'ADMIN'
+          ? router.push('/admin/dashboard')
+          : router.push('/');
       })
+      .then(() =>
+        dispatch({
+          type: 'OPEN_TOAST',
+          text: `You are now logged in`,
+          variant: 'success',
+        })
+      )
       .catch((e) => {
-        const { error } = e.response.data;
-        setError(error.message);
-      })
-      .finally(setSubmitting(false));
+        const { message } = e.response.data;
+        dispatch({ type: 'OPEN_TOAST', text: `${message}`, variant: 'error' });
+      });
+    // .finally(setSubmitting(false));
   };
 
   return (
@@ -49,10 +58,13 @@ const LoginView = () => {
         <Form className="mx-auto flex w-80 flex-col gap-5">
           <FormField type="email" name="email" placeholder="Email" />
           <FormField type="password" name="password" placeholder="Password" />
-          <Button type="submit" disabled={isSubmitting || !isValid}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !isValid}
+            loading={isSubmitting}
+          >
             Log In
           </Button>
-          <div className="text-center text-red-600">{error}</div>
           <div className="">
             <p>
               {`Don't have an account? `}

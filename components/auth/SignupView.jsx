@@ -20,7 +20,7 @@ const SignupView = () => {
     confirmPassword: '',
   };
 
-  const signup = ({ email, username, password }, { setSubmitting }) => {
+  const signup = ({ email, username, password }) => {
     setError('');
     axios
       .post('api/auth/signup', { email, username, password })
@@ -31,13 +31,20 @@ const SignupView = () => {
           token: data.token,
           user: data.user,
         });
-        router.push('/');
+        return router.push('/');
       })
+      .then(() =>
+        dispatch({
+          type: 'OPEN_TOAST',
+          text: `Signed up successfully`,
+          variant: 'success',
+        })
+      )
       .catch((e) => {
-        const { error } = e.response.data;
-        setError(error.message);
+        const { message } = e.response.data;
+        dispatch({ type: 'OPEN_TOAST', text: `${message}`, variant: 'error' });
       })
-      .finally(setSubmitting(false));
+      // .finally(setSubmitting(false));
   };
 
   return (
@@ -57,7 +64,7 @@ const SignupView = () => {
             name="confirmPassword"
             placeholder="Confirm Password"
           />
-          <Button type="submit" disabled={isSubmitting || !isValid}>
+          <Button type="submit" disabled={isSubmitting || !isValid} loading={isSubmitting} >
             Sign up
           </Button>
           <div className="text-center text-red-600">{error}</div>

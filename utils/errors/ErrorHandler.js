@@ -3,7 +3,7 @@ import ServerError from './ServerError';
 import UnauthenticatedError from './UnauthenticatedError';
 
 const errorHandler = (error) => {
-  console.log('error handler => ', error.code, error.name, error.message);
+  console.log('error handler => ', error.code, error.name, error.message, error);
   if (error.code && error.code === 11000) {
     if (error.message.includes('email')) {
       return new BadRequestError('Duplicate email');
@@ -13,7 +13,7 @@ const errorHandler = (error) => {
   } else if (error.name === 'JsonWebTokenError') {
     return new UnauthenticatedError('Invalid token');
   } else {
-    return new ServerError('Something went wrong!');
+    return new ServerError('Something went wrong!', error.code);
   }
 };
 
